@@ -1,200 +1,191 @@
-Everything is still only in my mind
-
-
-
 FT8 CHAT PROTOCOL — SUMMARY (v1.0)
 
+Status: design notes / working spec
+Everything is still evolving, but internally consistent.
 
-
-PURPOSE
+1. Purpose
 
 FT8 CHAT is a half-duplex, token-based text chat protocol built on FT8 free-text messages.
 
-It is designed for short human-readable conversations with minimal overhead and no per-message ACKs.
+It is designed for:
+
+short, human-readable conversations
+
+minimal overhead
+
+no per-message or per-chunk ACKs
+
+2. Session Start
+Caller initiates
+CQ CHAT CALLER_CALL GRID
+
+DX replies
+CALLER_CALL DX_CALL SNR
 
 
+After this exchange:
 
-SESSION START
+both stations enter CHAT MODE
 
-Caller sends:
+both stations use the caller’s frequency
 
-CQ CHAT <CALLER> <GRID>
+FT8 slot parity is fixed for the session
 
+3. Slot Rules
 
+Each station has an allowed initial FT8 slot (parity-based)
 
-DX replies:
+A station may start transmitting only in its allowed slot
 
-<CALLER> <DXCALL> <SNR>
+During its turn, a station may transmit sequential allowed slots
 
+Only one station owns the channel at a time
 
+4. Message Groups
 
-Both stations then enter CHAT MODE, using the caller’s frequency and fixed FT8 slot parity.
+One logical message = one MESSAGE GROUP
 
+A group contains 1 to 6 chunks
 
+Chunks are numbered 0 .. k
 
-SLOT RULES
+The group always ends with Zk
 
-• Each station has an allowed initial FT8 slot (parity-based).
+Zk means the group contains exactly k+1 chunks
 
-• A station may start TX only in its allowed slot.
+5. Chunk Format
 
-• During its turn, a station may transmit sequential allowed slots.
+Each FT8 free-text transmission is 13 characters total:
 
-• Only one station owns the channel at a time.
-
-
-
-MESSAGE GROUPS
-
-• One logical message = one MESSAGE GROUP.
-
-• A group contains 1–6 chunks.
-
-• Chunks are numbered 0..k and end with Zk.
-
-• Zk indicates the group has exactly k+1 chunks.
+SEQ + PAYLOAD
 
 
+Where:
 
-Chunk format (13 chars total):
+SEQ = one character
 
-<SEQ><PAYLOAD>
+0–5 : data chunk
 
+Z : end-of-group
 
+PAYLOAD = up to 12 characters
 
-SEQ:
+Maximum message length
 
-0–5 = data chunk
+6 chunks × 12 chars − 1 char = 71 characters
 
-Z = end-of-group
-
-
-
-Maximum message length = 71 characters.
-
-
-
-Examples:
-
+6. Examples
+Single-chunk message
 Z0HELLO
 
+Multi-chunk message
 0HELLO WHATS
-
 1UP NICE 2 CU
-
 Z2AGN
 
+7. Turn Handoff
 
+Sending Zk ends the sender’s turn
 
-TURN HANDOFF
+Channel ownership is offered to the other station
 
-• Sending Zk ends the sender’s turn and offers channel ownership.
+The receiver (DX) must transmit a decodable message in its first allowed slot
 
-• Receiver (DX) must transmit a decodable message in its first allowed slot.
+Valid first response:
 
-• Any valid message is acceptable (Z0OK or real content).
+Z0OK (automatic keepalive), or
 
-• The first DX transmission implicitly acknowledges the handoff.
+real prepared message content
 
+The first DX transmission implicitly acknowledges the handoff
 
+8. Zk Retransmission Rule
 
-Zk RETRANSMISSION RULE
+Zk is normally sent once
 
-• Zk is normally sent once.
+If another sender-allowed slot exists before DX’s first allowed slot, Zk may be repeated
 
-• If another sender-allowed slot exists before DX’s first allowed slot, Zk may be repeated.
+After DX’s first allowed slot:
 
-• After DX’s first allowed slot:
+If DX energy or decode is detected → handoff succeeded
 
-– If DX energy or decode is detected → handoff succeeded.
+If no DX energy → sender may resend Zk (sender-allowed slots only)
 
-– If no DX energy → sender may resend Zk (caller-allowed slots only).
+Recommended retry limit: 3 attempts, then drop chat
 
-• Retry limit recommended: 3 attempts, then drop chat.
+9. Missed Chunks
 
+Receiver determines missing chunks using Zk
 
+No protocol-level retransmission
 
-MISSED CHUNKS
+Operator may request repeats inside chat text, e.g.:
 
-• Receiver determines missing chunks using Zk.
+MISSED 1 PSE
 
-• No protocol-level retransmission.
+10. Heartbeat / Liveness
 
-• Operator may request repeats inside chat text (e.g. “MISSED 1 PSE”).
+Channel owner must send Z0OK when idle
 
+Heartbeat interval: ~1 minute
 
+Any normal message resets the heartbeat timer
 
-HEARTBEAT / LIVENESS
-
-• Channel owner must send Z0OK as a heartbeat when idle.
-
-• Heartbeat interval ≈ 1 minute.
-
-• Any normal message resets the heartbeat timer.
-
-• If two consecutive heartbeats are missed, the connection is considered lost.
-
-
+If two consecutive heartbeats are missed, the connection is considered lost
 
 Z0OK:
 
-• Asserts liveness
+asserts liveness
 
-• Does NOT transfer ownership
+does NOT transfer ownership
 
+11. FCC Identification
 
+FCC ID requirement is satisfied by transmitting:
 
-FCC IDENTIFICATION
-
-• FCC ID is satisfied by transmitting:
-
-DE <CALLSIGN>
+DE CALLSIGN
 
 
+Rules:
 
-• ID interval ≈ 10 minutes.
+ID interval ≈ 10 minutes
 
-• ID must be sent in the station’s allowable slot only.
+ID must be sent only in the station’s allowable slot
 
-• ID frames are ignored by protocol logic.
+ID frames are ignored by protocol logic
 
+12. Transparent ID Injection
 
+UI / firmware may automatically inject DE CALLSIGN into outgoing messages
 
-TRANSPARENT ID INJECTION
+Injection occurs only if the ID timer requires it
 
-• UI / firmware may transparently inject “DE <CALLSIGN>” into message text.
+User text always has priority
 
-• Injection occurs only if ID timer requires it.
+If ID does not fit within 71 characters:
 
-• User text has priority.
+skip injection
 
-• If ID does not fit within 71 characters, send standalone ID later.
+send standalone ID later
 
-• Operator is unaware of injection.
+Operator remains unaware of injection
 
+13. Sequence Rules
 
+Sequence numbers reset to 0 at the start of every message group
 
-SEQUENCE RULES
+No sequence continuity across turns
 
-• Sequence numbers reset to 0 at the start of every message group.
+Duplicate chunks may be ignored
 
-• No sequence continuity across turns.
+14. Design Philosophy
 
-• Duplicate chunks may be ignored.
+No per-chunk ACKs
 
+No protocol-level retransmission
 
+FT8-native timing and energy awareness
 
-DESIGN PHILOSOPHY
+Human-focused interaction
 
-• No per-chunk ACKs
-
-• No protocol-level retransmission
-
-• FT8-native timing and energy detection
-
-• Human-focused interaction
-
-• Bounded buffers and simple state machines
-
-
-
+Simple, bounded state machines suitable for firmware
