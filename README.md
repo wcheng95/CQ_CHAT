@@ -102,9 +102,6 @@ Z2AGN
 - Sending `Zk` **ends the sender’s turn**
 - Channel ownership is **offered to the other station**
 - The receiver (DX) **must transmit a decodable message in 2 minutes(8 slots), or the channel ownership becomes undetermined**
-- Valid first responses include:
-  - `Z0OK` (automatic keepalive)
-  - real prepared message content
 - The first DX transmission **implicitly acknowledges the handoff**
 
 ---
@@ -112,11 +109,7 @@ Z2AGN
 ## 8. Zk Retransmission Rule
 
 - `Zk` is normally sent **once**
-- If another sender-allowed slot exists **before DX’s first allowed slot**, `Zk` may be repeated
-- After DX’s first allowed slot:
-  - if DX energy or decode is detected → handoff succeeded  
-  - if **no DX energy** → sender may resend `Zk` (sender-allowed slots only)
-- Recommended retry limit: **3 attempts**, then drop chat
+- If another sender-allowed slot exists **before DX’s first allowed slot**, `Zk` may be repeated once
 
 ---
 
@@ -125,7 +118,6 @@ Z2AGN
 - Receiver determines missing chunks using `Zk`
 - **No protocol-level retransmission**
 - Operator may request repeats **inside chat text**, for example:
-
 ```
 MISSED 1 PSE
 ```
@@ -134,15 +126,9 @@ MISSED 1 PSE
 
 ## 10. Heartbeat / Liveness
 
-- Channel owner must send **`Z0OK`** when idle
-- Heartbeat interval: **~1 minute**
+- Channel owner may send **`Z0OK`** when idle to keep the connection alive
+- if a channel is idle to 2 minutes, the connection is considered as "lost".
 - Any normal message resets the heartbeat timer
-- If **two consecutive heartbeats are missed**, the connection is considered lost
-
-`Z0OK`:
-
-- asserts liveness
-- **does NOT transfer ownership**
 
 ---
 
@@ -189,4 +175,5 @@ Rules:
 - FT8-native timing and energy awareness
 - Human-focused interaction
 - Simple, bounded state machines suitable for firmware
+
 
