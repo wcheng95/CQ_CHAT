@@ -101,7 +101,7 @@ Z2AGN
 
 - Sending `Zk` **ends the sender’s turn**
 - Channel ownership is **offered to the other station**
-- The receiver (DX) **must transmit a decodable message in its first allowed slot**
+- The receiver (DX) **must transmit a decodable message in 2 minutes(8 slots), or the channel ownership becomes undetermined**
 - Valid first responses include:
   - `Z0OK` (automatic keepalive)
   - real prepared message content
@@ -189,3 +189,4 @@ Rules:
 - FT8-native timing and energy awareness
 - Human-focused interaction
 - Simple, bounded state machines suitable for firmware
+
